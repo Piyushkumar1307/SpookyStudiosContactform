@@ -1,0 +1,21 @@
+{
+  "name": "vipprafest-contact-api",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vercel dev",
+    "deploy": "vercel --prod",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "nodemailer": "^8.0.6",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "^24.12.2",
+    "@types/nodemailer": "^7.0.11",
+    "typescript": "^5.9.3"
+  }
+}
+
