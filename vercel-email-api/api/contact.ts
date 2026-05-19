@@ -1,23 +1,12 @@
-import nodemailer from 'nodemailer'
 import { z } from 'zod'
+import { envBool, mustEnv, sendTextMail } from '../lib/mail.js'
 
 const ContactSchema = z.object({
   name: z.string().trim().min(2).max(80),
   email: z.string().trim().email().max(160),
   message: z.string().trim().min(10).max(4000),
+  subject: z.string().trim().max(200).optional(),
 })
-
-function envBool(name: string, defaultValue: boolean) {
-  const raw = process.env[name]
-  if (raw == null) return defaultValue
-  return ['1', 'true', 'yes', 'on'].includes(raw.toLowerCase())
-}
-
-function mustEnv(name: string) {
-  const v = process.env[name]
-  if (!v) throw new Error(`Missing env var: ${name}`)
-  return v
-}
 
 function parseAllowedOrigins() {
   const raw = (process.env.ALLOWED_ORIGINS ?? '').trim()
@@ -30,25 +19,9 @@ function parseAllowedOrigins() {
 
 function isOriginAllowed(origin: string | null) {
   const allowed = parseAllowedOrigins()
-  if (allowed.length === 0) return true // if not set, allow all (dev-friendly)
+  if (allowed.length === 0) return true
   if (!origin) return false
   return allowed.includes(origin)
-}
-
-function createTransport() {
-  const host = mustEnv('SMTP_HOST')
-  const port = Number(mustEnv('SMTP_PORT'))
-  const user = mustEnv('SMTP_USER')
-  const pass = mustEnv('SMTP_PASS')
-
-  const secure = port === 465
-
-  return nodemailer.createTransport({
-    host,
-    port,
-    secure,
-    auth: { user, pass },
-  })
 }
 
 function setCors(res: any, origin: string | null) {
@@ -98,24 +71,22 @@ export default async function handler(req: any, res: any) {
     return
   }
 
-  const { name, email, message } = parsed.data
+  const { name, email, message, subject: subjectField } = parsed.data
+  const subject = subjectField?.trim() || `New website enquiry — ${name}`
 
   try {
-    const transport = createTransport()
+    const to = mustEnv('SMTP_TO')
 
-    const from = mustEnv('SMTP_FROM') // e.g. "Vipprafest <no-reply@yourdomain>"
-    const to = mustEnv('SMTP_TO') // where you want to receive leads
-
-    const subject = `New website enquiry — ${name}`
-
-    await transport.sendMail({
-      from,
+    await sendTextMail({
       to,
+      subject: `[spookystudios] ${subject}`,
       replyTo: email,
-      subject,
       text: [
+        `New message from spookystudios contact form`,
+        '',
         `Name: ${name}`,
         `Email: ${email}`,
+        `Subject: ${subject}`,
         '',
         message,
         '',
@@ -127,21 +98,20 @@ export default async function handler(req: any, res: any) {
     if (autoReplyEnabled) {
       const autoSubject =
         process.env.AUTO_REPLY_SUBJECT?.trim() ||
-        'We received your message — Vipprafest'
+        'We received your message — spookystudios'
       const autoBody =
         process.env.AUTO_REPLY_BODY?.trim() ||
         [
           `Hi ${name},`,
           '',
-          `Thanks for contacting. We have received your message and will respond within one business day.`,
+          `Thanks for contacting spookystudios. We received your message and will reply within one business day.`,
           '',
           'Your message:',
           message,
-          ''
+          '',
         ].join('\n')
 
-      await transport.sendMail({
-        from,
+      await sendTextMail({
         to: email,
         subject: autoSubject,
         text: autoBody,
@@ -150,12 +120,12 @@ export default async function handler(req: any, res: any) {
 
     res.statusCode = 200
     res.setHeader('Content-Type', 'application/json; charset=utf-8')
-    res.end(JSON.stringify({ ok: true }))
+    res.end(JSON.stringify({ ok: true, detail: 'Thanks — we received your message and will reply soon.' }))
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Unknown error'
-    res.statusCode = 500
+    console.error('contact error:', err)
+    res.statusCode = 502
     res.setHeader('Content-Type', 'application/json; charset=utf-8')
     res.end(JSON.stringify({ ok: false, error: msg }))
   }
 }
-

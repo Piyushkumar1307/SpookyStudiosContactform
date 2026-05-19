@@ -2,6 +2,9 @@
   "functions": {
     "api/contact.ts": {
       "maxDuration": 10
+    },
+    "api/send-mail.ts": {
+      "maxDuration": 10
     }
   },
   "routes": [{ "src": "/", "dest": "/api" }]
