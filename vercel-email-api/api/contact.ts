@@ -133,12 +133,11 @@ export default async function handler(req: any, res: any) {
         [
           `Hi ${name},`,
           '',
-          `Thanks for contacting Vipprafest. We have received your message and will respond within one business day.`,
+          `Thanks for contacting. We have received your message and will respond within one business day.`,
           '',
           'Your message:',
           message,
-          '',
-          '— Vipprafest',
+          ''
         ].join('\n')
 
       await transport.sendMail({
