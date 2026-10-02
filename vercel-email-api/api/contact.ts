@@ -79,10 +79,10 @@ export default async function handler(req: any, res: any) {
 
     await sendTextMail({
       to,
-      subject: `[spookystudios] ${subject}`,
+      subject: `[AyzenStudios] ${subject}`,
       replyTo: email,
       text: [
-        `New message from spookystudios contact form`,
+        `New Enquiry from AyzenStudios contact form`,
         '',
         `Name: ${name}`,
         `Email: ${email}`,
@@ -98,13 +98,13 @@ export default async function handler(req: any, res: any) {
     if (autoReplyEnabled) {
       const autoSubject =
         process.env.AUTO_REPLY_SUBJECT?.trim() ||
-        'We received your message — spookystudios'
+        'We received your message — AyzenStudios'
       const autoBody =
         process.env.AUTO_REPLY_BODY?.trim() ||
         [
           `Hi ${name},`,
           '',
-          `Thanks for contacting spookystudios. We received your message and will reply within one business day.`,
+          `Thanks for contacting AyzenStudios. We received your message and will reply within one business day.`,
           '',
           'Your message:',
           message,
